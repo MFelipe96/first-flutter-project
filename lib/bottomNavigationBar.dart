@@ -1,5 +1,6 @@
 
 import 'package:countriesapp/homePage.dart';
+import 'package:countriesapp/profile.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +16,7 @@ class _BottomNavigationBar extends State<BottomNavigationBarState>{
   final List<Widget> _children = [
     MyHomePage('Continentes'),
     PlaceholderWidget(Colors.deepOrange),
-    PlaceholderWidget(Colors.green)
+    ProfilePage()
   ];
   void _onClickedItem(int index){
     setState(() {
