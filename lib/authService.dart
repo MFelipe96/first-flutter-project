@@ -1,5 +1,9 @@
 import 'dart:math';
 
+import 'package:countriesapp/login.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
 class AuthService {
 
   // Login
@@ -14,12 +18,10 @@ class AuthService {
   }
 
   // Logout
-  Future<void> logout() async {
+  Future<void> logout(BuildContext context) async {
     // Simulate a future for response after 1 second.
-    return await new Future<void>.delayed(
-        new Duration(
-            seconds: 1
-        )
+    return await new Future<void>.value(
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage()))
     );
   }
 }

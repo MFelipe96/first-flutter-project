@@ -12,7 +12,7 @@ void main() async{
     runApp(MyApp());
 
     // Get result of the login function.
-    bool _result = false;
+    bool _result = true;
     //await appAuth.login();
     if (_result) {
       _defaultHome = new BottomNavigationBarState();
@@ -20,8 +20,6 @@ void main() async{
 }
 
 class MyApp extends StatelessWidget {
-
-
 
   // This widget is the root of your application.
   @override
