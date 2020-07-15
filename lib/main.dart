@@ -1,7 +1,9 @@
 
 import 'package:countriesapp/bottomNavigationBar.dart';
 import 'package:countriesapp/login.dart';
+import 'package:countriesapp/webLayout.dart';
 import 'package:flutter/material.dart';
+import 'package:responsive_builder/responsive_builder.dart';
 import 'authService.dart';
 import 'homePage.dart';
 
@@ -15,9 +17,23 @@ void main() async{
     bool _result = true;
     //await appAuth.login();
     if (_result) {
-      _defaultHome = new BottomNavigationBarState();
+      _defaultHome = _getTypeNavigation();
     }
+
 }
+
+Widget _getTypeNavigation(){
+  return ResponsiveBuilder(
+      builder: (context, sizingInformation){
+        if (sizingInformation.deviceScreenType ==
+            DeviceScreenType.desktop) {
+          return NavigationWebState();
+        }
+        return BottomNavigationBarState();
+      }
+  );
+}
+
 
 class MyApp extends StatelessWidget {
 
@@ -43,11 +59,11 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: _defaultHome,
-      routes: <String, WidgetBuilder>{
+      /*routes: <String, WidgetBuilder>{
         // Set routes for using the Navigator.
         '/home': (BuildContext context) => new MyHomePage("Continentes"),
         '/login': (BuildContext context) => new LoginPage()
-      },
+      },*/
     );
   }
 }

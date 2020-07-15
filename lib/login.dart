@@ -1,8 +1,11 @@
 
 import 'package:countriesapp/bottomNavigationBar.dart';
 import 'package:countriesapp/main.dart';
+import 'package:countriesapp/screenTypeLayout.dart';
+import 'package:countriesapp/webLayout.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:responsive_builder/responsive_builder.dart';
 import 'package:toast/toast.dart';
 
 class LoginPage extends StatefulWidget{
@@ -32,12 +35,12 @@ class _Login extends State<LoginPage>{
         Container(
           decoration: BoxDecoration(
             color: Colors.black,
-            image: new DecorationImage(
+            /*image: new DecorationImage(
           fit: BoxFit.cover,
           colorFilter:
           ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.dstATop),
-          image: AssetImage('images/wallpaper_flight.jpg'),
-            )
+         // image: AssetImage('images/wallpaper_flight.jpg'),
+            )*/
           ),
         ),
             Container(
@@ -98,10 +101,24 @@ class _Login extends State<LoginPage>{
                 appAuth.login(_emailController.text,
                     _passwordController.text).then((result) {
                   _isLoading = false;
-                  if (result)
-                    Navigator.pushReplacement(context,
-                        MaterialPageRoute(builder: (context) =>
-                            BottomNavigationBarState()));
+                  if (result) {
+                    Widget _TypeNavigation;
+
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ResponsiveBuilder(
+                        builder: (context, sizingInformation) {
+                          if (sizingInformation.deviceScreenType ==
+                              DeviceScreenType.desktop) {
+                            return NavigationWebState();
+                          }
+                          return BottomNavigationBarState();
+                        }
+                    )));
+                  /*MyScreenTypeLayout(
+                    mobile: _TypeNavigation = new BottomNavigationBarState(),
+                      desktop: _TypeNavigation = new NavigationWebState(),
+                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => _TypeNavigation));*/
+                  }
                   else
                     setState(() {
                       Toast.show("Login inválido", context,
