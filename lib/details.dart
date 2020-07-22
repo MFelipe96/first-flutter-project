@@ -1,22 +1,50 @@
+import 'dart:io';
+import 'package:countriesapp/serverError.dart';
+import 'package:dio/dio.dart';
+import 'package:countriesapp/apiClient.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
-
+import 'baseModel.dart';
 import 'homePage.dart';
-import 'main.dart';
+
+List<String> urls = new List();
 
 class Country {
-  final String name;
+  final String name, code;
 
-  Country({this.name});
+  Country({this.name, this.code});
   factory Country.fromJson(Map<String, dynamic> json) {
 
     return Country(
       name: json['name'],
+      code: json['alpha2Code']
     );
+  }
+}
+
+class GetImage {
+  Dio dio;
+  RestClient apiClient;
+
+  GetImage() {
+    dio = new Dio();
+    apiClient = new RestClient(dio);
+  }
+
+  Future<BaseModel<Data>> getDataFromCode(String code) async {
+     Data response;
+    try {
+      response = await apiClient.getCountryImage(code);
+    } catch (error, stacktrace) {
+      print("Exception occured: $error stackTrace: $stacktrace");
+      return BaseModel()..setException(ServerError.withError(error: error));
+    }
+    return BaseModel()..data = response;
   }
 }
 
@@ -37,6 +65,7 @@ Future<List<Country>> fetchCountry(String continent) async {
 }
 
 class MyContinentInformationsPage extends StatefulWidget{
+
   int index;
   MyContinentInformationsPage(int index){
     this.index = index;
@@ -47,48 +76,10 @@ class MyContinentInformationsPage extends StatefulWidget{
 
 }
 
-Widget _buildContinentInformation(int index){
-
-  return Column(
-    children:[
-        Card(
-        color: Colors.blueAccent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadiusDirectional.only(topStart: Radius.circular(8.0), topEnd: Radius.circular(8.0))),
-        child: Container(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child:Text("África", style: TextStyle(color: Colors.lightGreen, fontSize: 30, fontWeight: FontWeight.bold))
-                    ),
-                  ],
-                ),
-                Text("Nome: "),
-                Text("Idiomas: ")
-              ],
-          ),
-        ),
-      ),
-      Container(
-        color: Colors.blueGrey,
-        child: Column(
-          mainAxisSize: MainAxisSize.max, crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisAlignment: MainAxisAlignment.end,
-          children:[
-             Text("Informações")
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
 class _ContinentInformation extends State<MyContinentInformationsPage>{
 
   Future<List<Country>> futureCountry;
+  Future<BaseModel<Data>> futureImage;
   int index;
   String country;
   _ContinentInformation(int index){
@@ -98,6 +89,8 @@ class _ContinentInformation extends State<MyContinentInformationsPage>{
   @override
   void initState() {
     super.initState();
+    urls.clear();
+
     switch(names[index]){
       case "América":
           country = "americas";
@@ -116,11 +109,13 @@ class _ContinentInformation extends State<MyContinentInformationsPage>{
         break;
     }
     futureCountry = fetchCountry(country);
+    futureImage = GetImage().getDataFromCode('US');
   }
 
   @override
   Widget build(BuildContext context) {
     List<String> countries = new List();
+    List<String> codes = new List();
     return Scaffold(
       appBar: AppBar(
           title: Text("Países")
@@ -130,10 +125,11 @@ class _ContinentInformation extends State<MyContinentInformationsPage>{
         future: futureCountry,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            for (int i = 0; i < snapshot.data.length; i++) {
+            for(int i = 0; i < snapshot.data.length; i++) {
               countries.add(snapshot.data[i].name);
+              codes.add(snapshot.data[i].code);
             }
-            return _buildList(countries);
+            return getImages(countries,codes);
           } else if (snapshot.hasError) {
             return Text("${snapshot.error}");
           }
@@ -146,14 +142,56 @@ class _ContinentInformation extends State<MyContinentInformationsPage>{
     throw UnimplementedError();
   }
 
-  Widget _buildList(List<String> countries) => ListView.builder(
-      itemCount: countries.length,
+  Widget _buildList(List<String> countries, List<String> urls) => ListView.separated(
+    itemCount: countries.length,
       itemBuilder: (BuildContext context, int index){
-        return ListTile(
-            title: Text(countries[index])
+        return GestureDetector(
+          onTap: () => print(countries[index]),
+          child: ListTile(
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ClipOval(
+                      child: Container(
+                        height: 65,
+                        width: 45,
+                        child: SvgPicture.network(
+                         '${urls[0]}',
+                          width: 45,
+                          height: 65,
+                          semanticsLabel: 'Bandeira do país',
+                        fit: BoxFit.cover,
+                        placeholderBuilder: (context) => CircularProgressIndicator(),
+                    ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              title: Text(countries[index])
+          ),
         );
-      }
-    //child: _buildContinentInformation(widget.index)
+      },
+    separatorBuilder: (context, index) => Divider(),
   );
 
+  getImages(List<String> countries, List<String> codes){
+    //a api tem um limite baixo de requisições por minuto
+    //futureImage = GetImage().getDataFromCode(codes[_counter++]);
+    return FutureBuilder<BaseModel<Data>>(
+        future: futureImage,
+        builder: (context, AsyncSnapshot<BaseModel<Data>> snapshot) {
+      if (snapshot.hasData) {
+          urls.add(snapshot.data.data.countryImage.imageUrl);
+          return _buildList(countries, urls);
+          //return _counter == codes.length-1 ? _buildList(countries, urls) : getImages(countries, codes);
+      }else if (snapshot.hasError) {
+        return Text("${snapshot.error}");
+      }
+      return CircularProgressIndicator();
+          }
+      );
+  }
 }
